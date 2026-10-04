@@ -102,8 +102,8 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header Aplikasi */}
       <View style={styles.header}>
-        <Text style={styles.headerSubtitle}>Temukan tempat asik di sekitarmu ☕</Text>
-        <Text style={styles.headerTitle}>Direktori Nongkrong</Text>
+        <Text style={styles.headerSubtitle}>Temukan tempat Nongkrong asik di sekitarmu ☕</Text>
+        <Text style={styles.headerTitle}>Nongkrongyuk</Text>
       </View>
 
       {/* Search Bar */}
