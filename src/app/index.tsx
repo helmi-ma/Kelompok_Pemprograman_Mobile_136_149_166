@@ -1,13 +1,14 @@
 import { useState } from "react";
 import {
-    FlatList,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TempatNongkrong } from "./Nongkrongyuk";
@@ -74,6 +75,23 @@ export default function HomeScreen() {
     return matchSearch && matchKategori;
   });
 
+  const handleDetail = (item: TempatNongkrong) => {
+    Alert.alert(
+      item.nama,
+      `Kategori: ${item.kategori}
+  Rating: ${item.rating}
+  Lokasi: ${item.lokasi}
+  Jam buka: ${item.jamBuka}
+  Kisaran harga: ${item.harga}`,
+      [
+        {
+          text: "Tutup",
+          style: "cancel",
+        },
+      ],
+    );
+  };
+
   const renderCard = ({ item }: { item: TempatNongkrong }) => (
     <TouchableOpacity style={styles.card} activeOpacity={0.8}>
       <Image source={{ uri: item.gambar }} style={styles.cardImage} />
@@ -94,6 +112,12 @@ export default function HomeScreen() {
         <Text style={styles.infoText}>Jam buka: {item.jamBuka}</Text>
         <Text style={styles.priceLabel}>Kisaran harga</Text>
         <Text style={styles.priceText}>{item.harga}</Text>
+        <TouchableOpacity
+          style={styles.detailButton}
+          onPress={() => handleDetail(item)}
+        >
+          <Text style={styles.detailButtonText}>Lihat Detail</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -101,7 +125,9 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerSubtitle}>Temukan tempat Nongkrong asik di Kota Malang ☕</Text>
+        <Text style={styles.headerSubtitle}>
+          Temukan tempat Nongkrong asik di Kota Malang ☕
+        </Text>
         <Text style={styles.headerTitle}>Nongkrongyuk</Text>
       </View>
 
@@ -195,6 +221,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F4F7F6",
+  },
+  detailButton: {
+    backgroundColor: "#246A59",
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 12,
+  },
+
+  detailButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
   },
   header: {
     paddingHorizontal: 22,
