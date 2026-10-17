@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Alert,
   FlatList,
@@ -13,7 +13,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TempatNongkrong } from "./Nongkrongyuk";
 
-// Data Dummy Tempat Nongkrong
 const DATA_NONGKRONG: TempatNongkrong[] = [
   {
     id: "1",
@@ -59,11 +58,24 @@ const DATA_NONGKRONG: TempatNongkrong[] = [
   },
 ];
 
+
 const KATEGORI_LIST = ["Semua", "Kafe", "Workspace", "Outdoor", "Rooftop"];
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [kategoriTerpilih, setKategoriTerpilih] = useState("Semua");
+
+// Hook useEffect: Berjalan otomatis saat komponen pertama kali dimuat
+  useEffect(() => {
+    console.log("Aplikasi Nongkrongyuk berhasil dimuat!");
+  }, []);
+
+  // Hook useEffect: Berjalan otomatis setiap kali kategori atau kata kunci pencarian berubah
+  useEffect(() => {
+    if (searchQuery !== "") {
+      console.log(`Pencarian aktif: "${searchQuery}" pada kategori: ${kategoriTerpilih}`);
+    }
+  }, [searchQuery, kategoriTerpilih]);
 
   // Filter Data berdasarkan Pencarian & Kategori
   const filteredData = DATA_NONGKRONG.filter((item) => {
