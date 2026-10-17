@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -58,14 +59,14 @@ const DATA_NONGKRONG: TempatNongkrong[] = [
   },
 ];
 
-
 const KATEGORI_LIST = ["Semua", "Kafe", "Workspace", "Outdoor", "Rooftop"];
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [kategoriTerpilih, setKategoriTerpilih] = useState("Semua");
+  const [searchVisible, setSearchVisible] = useState(false);
 
-// Hook useEffect: Berjalan otomatis saat komponen pertama kali dimuat
+  // Hook useEffect: Berjalan otomatis saat komponen pertama kali dimuat
   useEffect(() => {
     console.log("Aplikasi Nongkrongyuk berhasil dimuat!");
   }, []);
@@ -73,7 +74,9 @@ export default function HomeScreen() {
   // Hook useEffect: Berjalan otomatis setiap kali kategori atau kata kunci pencarian berubah
   useEffect(() => {
     if (searchQuery !== "") {
-      console.log(`Pencarian aktif: "${searchQuery}" pada kategori: ${kategoriTerpilih}`);
+      console.log(
+        `Pencarian aktif: "${searchQuery}" pada kategori: ${kategoriTerpilih}`,
+      );
     }
   }, [searchQuery, kategoriTerpilih]);
 
@@ -126,7 +129,21 @@ export default function HomeScreen() {
         <Text style={styles.priceText}>{item.harga}</Text>
         <TouchableOpacity
           style={styles.detailButton}
-          onPress={() => handleDetail(item)}
+          onPress={() =>
+            router.push({
+              pathname: "/detail",
+              params: {
+                id: item.id,
+                nama: item.nama,
+                kategori: item.kategori,
+                rating: String(item.rating),
+                harga: item.harga,
+                jamBuka: item.jamBuka,
+                lokasi: item.lokasi,
+                gambar: item.gambar,
+              },
+            })
+          }
         >
           <Text style={styles.detailButtonText}>Lihat Detail</Text>
         </TouchableOpacity>
@@ -140,21 +157,35 @@ export default function HomeScreen() {
         <Text style={styles.headerSubtitle}>
           Temukan tempat Nongkrong asik di Kota Malang ☕
         </Text>
-        <Text style={styles.headerTitle}>Nongkrongyuk</Text>
+
+        <View style={styles.headerRow}>
+          <Text style={styles.headerTitle}>Nongkrongyuk</Text>
+
+          <TouchableOpacity
+            style={styles.searchToggle}
+            onPress={() => setSearchVisible(!searchVisible)}
+          >
+            <Text style={styles.searchToggleText}>
+              {searchVisible ? "✕" : "⌕"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View style={styles.searchContainer}>
-        <Text style={styles.sectionTitle}>Cari tempat</Text>
-        <TextInput
-          style={styles.searchInput}
-          accessibilityLabel="Cari nama tempat atau lokasi"
-          placeholder="Contoh: kafe atau Lowokwaru"
-          placeholderTextColor="#727A7C"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          returnKeyType="search"
-        />
-      </View>
+      {searchVisible && (
+        <View style={styles.searchContainer}>
+          <Text style={styles.sectionTitle}>Cari tempat</Text>
+          <TextInput
+            style={styles.searchInput}
+            accessibilityLabel="Cari nama tempat atau lokasi"
+            placeholder="Contoh: kafe atau Lowokwaru"
+            placeholderTextColor="#727A7C"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+          />
+        </View>
+      )}
 
       <View style={styles.categorySection}>
         <View style={styles.sectionHeading}>
@@ -196,6 +227,12 @@ export default function HomeScreen() {
       {/* List Tempat Nongkrong */}
       <FlatList
         data={filteredData}
+        onScroll={(event) => {
+          if (event.nativeEvent.contentOffset.y > 10) {
+            setSearchVisible(false);
+          }
+        }}
+        scrollEventThrottle={16}
         keyExtractor={(item) => item.id}
         renderItem={renderCard}
         contentContainerStyle={styles.listContainer}
@@ -230,6 +267,27 @@ export default function HomeScreen() {
 
 // Styling Eksternal / Internal
 const styles = StyleSheet.create({
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  searchToggle: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "#246A59",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  searchToggleText: {
+    color: "#FFFFFF",
+    fontSize: 25,
+    fontWeight: "bold",
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#F4F7F6",
