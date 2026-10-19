@@ -66,12 +66,10 @@ export default function HomeScreen() {
   const [kategoriTerpilih, setKategoriTerpilih] = useState("Semua");
   const [searchVisible, setSearchVisible] = useState(false);
 
-  // Hook useEffect: Berjalan otomatis saat komponen pertama kali dimuat
   useEffect(() => {
     console.log("Aplikasi Nongkrongyuk berhasil dimuat!");
   }, []);
 
-  // Hook useEffect: Berjalan otomatis setiap kali kategori atau kata kunci pencarian berubah
   useEffect(() => {
     if (searchQuery !== "") {
       console.log(
@@ -80,7 +78,6 @@ export default function HomeScreen() {
     }
   }, [searchQuery, kategoriTerpilih]);
 
-  // Filter Data berdasarkan Pencarian & Kategori
   const filteredData = DATA_NONGKRONG.filter((item) => {
     const matchSearch =
       item.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -224,7 +221,6 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
-      {/* List Tempat Nongkrong */}
       <FlatList
         data={filteredData}
         onScroll={(event) => {
@@ -265,7 +261,6 @@ export default function HomeScreen() {
   );
 }
 
-// Styling Eksternal / Internal
 const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",

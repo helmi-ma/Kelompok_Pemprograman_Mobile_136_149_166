@@ -13,17 +13,42 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
 
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: "#246A59",
+          },
+          headerTintColor: "#FFFFFF",
+          headerTitleStyle: {
+            fontWeight: "bold",
+          },
+        }}
+      >
+        <Stack.Screen
+          name="index"
+          options={{
+            headerShown: false,
+          }}
+        />
 
-        <Stack.Screen name="explore" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="explore"
+          options={{
+            headerShown: false,
+          }}
+        />
 
         <Stack.Screen
           name="detail"
-          options={{
-            title: "Detail Kafe",
-            headerShown: false,
-          }}
+          options={({ route }: any) => ({
+            title: route.params?.nama ? route.params.nama : "Detail Cafe",
+
+            headerShown: true,
+
+            headerBackTitle: "Kembali",
+
+            animation: "slide_from_right",
+          })}
         />
       </Stack>
     </ThemeProvider>

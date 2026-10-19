@@ -1,16 +1,17 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function DetailScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const { id, nama, kategori, rating, harga, jamBuka, lokasi, gambar } =
     useLocalSearchParams<{
@@ -24,18 +25,22 @@ export default function DetailScreen() {
       gambar: string;
     }>();
 
+  const handleBackNavigation = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/");
+    }
+  };
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={{
-        paddingTop: insets.top + 12,
+        paddingTop: 12,
         paddingBottom: insets.bottom + 24,
       }}
     >
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>‹ Kembali</Text>
-      </TouchableOpacity>
-
       {gambar ? (
         <Image
           source={{ uri: gambar }}
@@ -66,6 +71,14 @@ export default function DetailScreen() {
         </View>
 
         <Text style={styles.idText}>ID Tempat: {id}</Text>
+
+        <TouchableOpacity
+          style={styles.customBackButton}
+          onPress={handleBackNavigation}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.customBackButtonText}>Kembali ke Beranda</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -75,20 +88,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8FAFC",
-  },
-  backButton: {
-    alignSelf: "flex-start",
-    marginHorizontal: 20,
-    marginBottom: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: "#E2E8F0",
-  },
-  backButtonText: {
-    color: "#0F172A",
-    fontSize: 16,
-    fontWeight: "600",
   },
   image: {
     width: "100%",
@@ -137,5 +136,17 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     fontSize: 12,
     marginTop: 8,
+  },
+  customBackButton: {
+    backgroundColor: "#246A59",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 24,
+  },
+  customBackButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
