@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "demo_mdl3",
-    "slug": "demo_mdl3",
+    "name": "proyek-pekan-demo",
+    "slug": "proyek-pekan-demo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "demomdl3",
+    "scheme": "proyekpekandemo",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
@@ -20,7 +20,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "server",
+      "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
