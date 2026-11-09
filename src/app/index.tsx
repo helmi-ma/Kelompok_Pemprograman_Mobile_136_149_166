@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// 1. Mengubah import: Menggunakan getPlacesAsync buatan Helmi
 import { getPlacesAsync } from "@/services/nongkrongService";
 import { TempatNongkrong } from "@/types/nongkrong";
 
@@ -28,7 +27,6 @@ export default function HomeScreen() {
   const [kategoriTerpilih, setKategoriTerpilih] = useState("Semua");
   const [searchVisible, setSearchVisible] = useState(false);
 
-  // 2. Mengubah loadData: Menggunakan getPlacesAsync() secara ringkas & async/await
   const loadData = async () => {
     setIsLoading(true);
     setErrorMessage(null);

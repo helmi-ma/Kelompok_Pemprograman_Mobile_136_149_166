@@ -4,7 +4,6 @@ export interface ApiResponse<T> {
   message: string;
 }
 
-// Interface fleksibel untuk membaca item respons JSON dari API Custom DummyJSON Anda
 export interface ApiCustomTempatNongkrong {
   id: string | number;
   nama?: string;

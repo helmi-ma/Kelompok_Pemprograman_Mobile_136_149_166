@@ -1,10 +1,8 @@
 import { ApiCustomTempatNongkrong } from "@/types/api";
 import { TempatNongkrong } from "@/types/nongkrong";
 
-// Endpoint API Custom milik Anda di DummyJSON
 const EXTERNAL_API_URL = "https://dummyjson.com/c/099d-b825-41f5-820d";
 
-// Helper simulasi delay Asynchronous (Promise, resolve, reject)
 export const delaySimulation = (ms: number): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (ms < 0) {
@@ -17,7 +15,6 @@ export const delaySimulation = (ms: number): Promise<void> => {
   });
 };
 
-// Fungsi Utama API Call yang menggunakan Pre-built fetch(), .then(), .resolve(), dan .reject()
 export const fetchTempatNongkrongFromApi = (): Promise<TempatNongkrong[]> => {
   return new Promise((resolve, reject) => {
     fetch(EXTERNAL_API_URL)
@@ -28,12 +25,10 @@ export const fetchTempatNongkrongFromApi = (): Promise<TempatNongkrong[]> => {
         return response.json();
       })
       .then((jsonResult: any) => {
-        // Menangani respons baik berupa Array langsung maupun Objek pembungkus
         const rawItems: ApiCustomTempatNongkrong[] = Array.isArray(jsonResult)
           ? jsonResult
           : jsonResult.data || jsonResult.nongkrong || jsonResult.products || [];
 
-        // Memetakan (mapping) respons JSON dari API Custom Anda ke struktur Interface TempatNongkrong
         const mappedData: TempatNongkrong[] = rawItems.map(
           (item: ApiCustomTempatNongkrong, index: number) => {
             const defaultImages = [
@@ -67,13 +62,11 @@ export const fetchTempatNongkrongFromApi = (): Promise<TempatNongkrong[]> => {
           }
         );
 
-        // Memanggil resolve() saat sukses memproses data
         resolve(mappedData);
       })
       .catch((error) => {
         console.error("Gagal mengambil data dari API Custom, menggunakan fallback:", error);
 
-        // Fallback data jika server API atau koneksi internet bermasalah
         const fallbackData: TempatNongkrong[] = [
           {
             id: "1",
@@ -96,15 +89,10 @@ export const fetchTempatNongkrongFromApi = (): Promise<TempatNongkrong[]> => {
             gambar: "https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=500",
           },
         ];
-
-        // Memanggil resolve dengan fallback data agar antarmuka tidak crash
         resolve(fallbackData);
       });
   });
 };
-// =========================================================================
-// Tugas Helmi: Custom Async Function & Pre-built Async Function (async/await)
-// =========================================================================
 
 export const getPlacesAsync = async (): Promise<TempatNongkrong[]> => {
   await delaySimulation(1000);
