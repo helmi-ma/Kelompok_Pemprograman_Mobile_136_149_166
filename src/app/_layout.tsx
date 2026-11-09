@@ -42,11 +42,8 @@ export default function RootLayout() {
           name="detail"
           options={({ route }: any) => ({
             title: route.params?.nama ? route.params.nama : "Detail Cafe",
-
             headerShown: true,
-
             headerBackTitle: "Kembali",
-
             animation: "slide_from_right",
           })}
         />

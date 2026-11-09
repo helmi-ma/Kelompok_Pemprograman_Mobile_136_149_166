@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
   FlatList,
   Image,
   ScrollView,
@@ -12,73 +12,40 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { TempatNongkrong } from "./Nongkrongyuk";
 
-const DATA_NONGKRONG: TempatNongkrong[] = [
-  {
-    id: "1",
-    nama: "Senja Coffee & Space",
-    kategori: "Workspace",
-    rating: 4.8,
-    harga: "Rp 18.000 - Rp 45.000",
-    jamBuka: "08.00 - 23.00",
-    lokasi: "Lowokwaru, Malang",
-    gambar: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500",
-  },
-  {
-    id: "2",
-    nama: "Kopi Tepi Jalan",
-    kategori: "Outdoor",
-    rating: 4.6,
-    harga: "Rp 12.000 - Rp 30.000",
-    jamBuka: "15.00 - 01.00",
-    lokasi: "Sukun, Malang",
-    gambar:
-      "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=500",
-  },
-  {
-    id: "3",
-    nama: "Skyline Rooftop & Eatery",
-    kategori: "Rooftop",
-    rating: 4.9,
-    harga: "Rp 25.000 - Rp 85.000",
-    jamBuka: "16.00 - 24.00",
-    lokasi: "Klojen, Malang",
-    gambar:
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500",
-  },
-  {
-    id: "4",
-    nama: "Rustic Artisan Cafe",
-    kategori: "Kafe",
-    rating: 4.7,
-    harga: "Rp 20.000 - Rp 50.000",
-    jamBuka: "09.00 - 22.00",
-    lokasi: "Blimbing, Malang",
-    gambar: "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=500",
-  },
-];
+import { delaySimulation, fetchTempatNongkrongFromApi } from "@/services/nongkrongService";
+import { TempatNongkrong } from "@/types/nongkrong";
 
 const KATEGORI_LIST = ["Semua", "Kafe", "Workspace", "Outdoor", "Rooftop"];
 
 export default function HomeScreen() {
+  const [dataNongkrong, setDataNongkrong] = useState<TempatNongkrong[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [kategoriTerpilih, setKategoriTerpilih] = useState("Semua");
   const [searchVisible, setSearchVisible] = useState(false);
 
+  const loadData = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      await delaySimulation(800);
+      const result = await fetchTempatNongkrongFromApi();
+      setDataNongkrong(result);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Terjadi kesalahan saat memuat data.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    console.log("Aplikasi Nongkrongyuk berhasil dimuat!");
+    loadData();
   }, []);
 
-  useEffect(() => {
-    if (searchQuery !== "") {
-      console.log(
-        `Pencarian aktif: "${searchQuery}" pada kategori: ${kategoriTerpilih}`,
-      );
-    }
-  }, [searchQuery, kategoriTerpilih]);
-
-  const filteredData = DATA_NONGKRONG.filter((item) => {
+  const filteredData = dataNongkrong.filter((item) => {
     const matchSearch =
       item.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.lokasi.toLowerCase().includes(searchQuery.toLowerCase());
@@ -86,23 +53,6 @@ export default function HomeScreen() {
       kategoriTerpilih === "Semua" || item.kategori === kategoriTerpilih;
     return matchSearch && matchKategori;
   });
-
-  const handleDetail = (item: TempatNongkrong) => {
-    Alert.alert(
-      item.nama,
-      `Kategori: ${item.kategori}
-  Rating: ${item.rating}
-  Lokasi: ${item.lokasi}
-  Jam buka: ${item.jamBuka}
-  Kisaran harga: ${item.harga}`,
-      [
-        {
-          text: "Tutup",
-          style: "cancel",
-        },
-      ],
-    );
-  };
 
   const renderCard = ({ item }: { item: TempatNongkrong }) => (
     <TouchableOpacity style={styles.card} activeOpacity={0.8}>
@@ -112,7 +62,7 @@ export default function HomeScreen() {
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{item.nama}</Text>
           <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>Rating {item.rating}</Text>
+            <Text style={styles.ratingText}>★ {item.rating}</Text>
           </View>
         </View>
 
@@ -124,6 +74,7 @@ export default function HomeScreen() {
         <Text style={styles.infoText}>Jam buka: {item.jamBuka}</Text>
         <Text style={styles.priceLabel}>Kisaran harga</Text>
         <Text style={styles.priceText}>{item.harga}</Text>
+
         <TouchableOpacity
           style={styles.detailButton}
           onPress={() =>
@@ -204,8 +155,6 @@ export default function HomeScreen() {
                   isActive && styles.categoryChipActive,
                 ]}
                 onPress={() => setKategoriTerpilih(kategori)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isActive }}
               >
                 <Text
                   style={[
@@ -221,53 +170,66 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
-      <FlatList
-        data={filteredData}
-        onScroll={(event) => {
-          if (event.nativeEvent.contentOffset.y > 10) {
-            setSearchVisible(false);
-          }
-        }}
-        scrollEventThrottle={16}
-        keyExtractor={(item) => item.id}
-        renderItem={renderCard}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <Text style={styles.resultCount}>
-            {filteredData.length} tempat ditemukan
-          </Text>
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>Belum ada tempat yang cocok</Text>
-            <Text style={styles.emptyText}>
-              Coba kata pencarian lain atau pilih kategori Semua.
+      {isLoading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#246A59" />
+          <Text style={styles.loadingText}>Mengambil data dari API...</Text>
+        </View>
+      ) : errorMessage ? (
+        <View style={styles.centerContainer}>
+          <Text style={styles.emptyTitle}>Gagal Memuat Data</Text>
+          <Text style={styles.emptyText}>{errorMessage}</Text>
+          <TouchableOpacity style={styles.resetButton} onPress={loadData}>
+            <Text style={styles.resetButtonText}>Coba Lagi</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredData}
+          onScroll={(event) => {
+            if (event.nativeEvent.contentOffset.y > 10) {
+              setSearchVisible(false);
+            }
+          }}
+          scrollEventThrottle={16}
+          keyExtractor={(item) => item.id}
+          renderItem={renderCard}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <Text style={styles.resultCount}>
+              {filteredData.length} tempat ditemukan
             </Text>
-            <TouchableOpacity
-              style={styles.resetButton}
-              onPress={() => {
-                setSearchQuery("");
-                setKategoriTerpilih("Semua");
-              }}
-              accessibilityRole="button"
-            >
-              <Text style={styles.resetButtonText}>Tampilkan semua tempat</Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>Belum ada tempat yang cocok</Text>
+              <Text style={styles.emptyText}>
+                Coba kata pencarian lain atau pilih kategori Semua.
+              </Text>
+              <TouchableOpacity
+                style={styles.resetButton}
+                onPress={() => {
+                  setSearchQuery("");
+                  setKategoriTerpilih("Semua");
+                }}
+              >
+                <Text style={styles.resetButtonText}>Tampilkan semua tempat</Text>
+              </TouchableOpacity>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
+  container: { flex: 1, backgroundColor: "#F4F7F6" },
+  header: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 18 },
+  headerSubtitle: { fontSize: 15, color: "#586361", marginTop: 5 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerTitle: { fontSize: 29, lineHeight: 35, fontWeight: "800", color: "#1D302C" },
   searchToggle: {
     width: 40,
     height: 40,
@@ -276,74 +238,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
-  searchToggleText: {
-    color: "#FFFFFF",
-    fontSize: 25,
-    fontWeight: "bold",
-  },
-
-  container: {
-    flex: 1,
-    backgroundColor: "#F4F7F6",
-  },
-  detailButton: {
-    backgroundColor: "#246A59",
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-
-  detailButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  header: {
-    paddingHorizontal: 22,
-    paddingTop: 16,
-    paddingBottom: 18,
-  },
-  brand: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#347A69",
-    marginBottom: 9,
-  },
-  headerSubtitle: {
-    fontSize: 15,
-    color: "#586361",
-    marginTop: 5,
-  },
-  headerTitle: {
-    fontSize: 29,
-    lineHeight: 35,
-    fontWeight: "800",
-    color: "#1D302C",
-  },
-  searchContainer: {
-    paddingHorizontal: 22,
-    marginBottom: 18,
-  },
-  sectionHeading: {
-    paddingHorizontal: 22,
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    lineHeight: 22,
-    fontWeight: "700",
-    color: "#1D302C",
-  },
-  sectionHint: {
-    fontSize: 13,
-    color: "#687370",
-    marginTop: 2,
-  },
-  categorySection: {
-    marginBottom: 10,
-  },
+  searchToggleText: { color: "#FFFFFF", fontSize: 25, fontWeight: "bold" },
+  searchContainer: { paddingHorizontal: 22, marginBottom: 18 },
+  sectionHeading: { paddingHorizontal: 22, marginBottom: 10 },
+  sectionTitle: { fontSize: 16, lineHeight: 22, fontWeight: "700", color: "#1D302C" },
+  sectionHint: { fontSize: 13, color: "#687370", marginTop: 2 },
+  categorySection: { marginBottom: 10 },
   searchInput: {
     backgroundColor: "#FFFFFF",
     borderRadius: 10,
@@ -355,11 +255,7 @@ const styles = StyleSheet.create({
     borderColor: "#DCE5E1",
     color: "#1D302C",
   },
-  categoryContainer: {
-    paddingHorizontal: 22,
-    alignItems: "center",
-    paddingBottom: 3,
-  },
+  categoryContainer: { paddingHorizontal: 22, alignItems: "center", paddingBottom: 3 },
   categoryChip: {
     minHeight: 42,
     justifyContent: "center",
@@ -368,28 +264,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#E6ECE9",
     marginRight: 9,
   },
-  categoryChipActive: {
-    backgroundColor: "#246A59",
-  },
-  categoryText: {
-    fontSize: 14,
-    color: "#35413E",
-    fontWeight: "600",
-  },
-  categoryTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-  },
-  listContainer: {
-    paddingHorizontal: 22,
-    paddingBottom: 28,
-  },
-  resultCount: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#687370",
-    marginBottom: 10,
-  },
+  categoryChipActive: { backgroundColor: "#246A59" },
+  categoryText: { fontSize: 14, color: "#35413E", fontWeight: "600" },
+  categoryTextActive: { color: "#FFFFFF", fontWeight: "700" },
+  listContainer: { paddingHorizontal: 22, paddingBottom: 28 },
+  resultCount: { fontSize: 13, fontWeight: "600", color: "#687370", marginBottom: 10 },
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 10,
@@ -398,37 +277,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E0E7E3",
   },
-  cardImage: {
-    width: "100%",
-    height: 148,
-  },
-  cardContent: {
-    padding: 15,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  cardTitle: {
-    fontSize: 17,
-    lineHeight: 23,
-    fontWeight: "700",
-    color: "#1D302C",
-    flex: 1,
-    marginRight: 10,
-  },
-  ratingContainer: {
-    backgroundColor: "#FFF0D7",
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 6,
-  },
-  ratingText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#8B4B16",
-  },
+  cardImage: { width: "100%", height: 148 },
+  cardContent: { padding: 15 },
+  cardHeader: { flexDirection: "row", alignItems: "flex-start", marginBottom: 8 },
+  cardTitle: { fontSize: 17, lineHeight: 23, fontWeight: "700", color: "#1D302C", flex: 1, marginRight: 10 },
+  ratingContainer: { backgroundColor: "#FFF0D7", paddingHorizontal: 9, paddingVertical: 5, borderRadius: 6 },
+  ratingText: { fontSize: 11, fontWeight: "700", color: "#8B4B16" },
   badgeContainer: {
     alignSelf: "flex-start",
     backgroundColor: "#E6F2EE",
@@ -437,43 +291,23 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 9,
   },
-  badgeText: {
-    fontSize: 12,
-    color: "#246A59",
-    fontWeight: "600",
+  badgeText: { fontSize: 12, color: "#246A59", fontWeight: "600" },
+  infoText: { fontSize: 13, lineHeight: 19, color: "#586361", marginBottom: 3 },
+  priceLabel: { fontSize: 12, color: "#687370", marginTop: 8 },
+  priceText: { fontSize: 15, fontWeight: "700", color: "#246A59", marginTop: 2 },
+  detailButton: {
+    backgroundColor: "#246A59",
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 12,
   },
-  infoText: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: "#586361",
-    marginBottom: 3,
-  },
-  priceLabel: {
-    fontSize: 12,
-    color: "#687370",
-    marginTop: 8,
-  },
-  priceText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#246A59",
-    marginTop: 2,
-  },
-  emptyContainer: {
-    alignItems: "flex-start",
-    paddingVertical: 28,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#1D302C",
-    marginBottom: 6,
-  },
-  emptyText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#687370",
-  },
+  detailButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 22 },
+  loadingText: { marginTop: 12, fontSize: 14, color: "#586361" },
+  emptyContainer: { alignItems: "flex-start", paddingVertical: 28 },
+  emptyTitle: { fontSize: 17, fontWeight: "700", color: "#1D302C", marginBottom: 6 },
+  emptyText: { fontSize: 14, lineHeight: 20, color: "#687370" },
   resetButton: {
     minHeight: 44,
     justifyContent: "center",
@@ -482,9 +316,5 @@ const styles = StyleSheet.create({
     backgroundColor: "#246A59",
     borderRadius: 8,
   },
-  resetButtonText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
+  resetButtonText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
 });
