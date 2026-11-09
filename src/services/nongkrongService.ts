@@ -102,3 +102,14 @@ export const fetchTempatNongkrongFromApi = (): Promise<TempatNongkrong[]> => {
       });
   });
 };
+// =========================================================================
+// Tugas Helmi: Custom Async Function & Pre-built Async Function (async/await)
+// =========================================================================
+
+export const getPlacesAsync = async (): Promise<TempatNongkrong[]> => {
+  await delaySimulation(1000);
+
+  const data = await fetchTempatNongkrongFromApi();
+  
+  return data;
+};

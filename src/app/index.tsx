@@ -13,7 +13,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { delaySimulation, fetchTempatNongkrongFromApi } from "@/services/nongkrongService";
+// 1. Mengubah import: Menggunakan getPlacesAsync buatan Helmi
+import { getPlacesAsync } from "@/services/nongkrongService";
 import { TempatNongkrong } from "@/types/nongkrong";
 
 const KATEGORI_LIST = ["Semua", "Kafe", "Workspace", "Outdoor", "Rooftop"];
@@ -27,12 +28,12 @@ export default function HomeScreen() {
   const [kategoriTerpilih, setKategoriTerpilih] = useState("Semua");
   const [searchVisible, setSearchVisible] = useState(false);
 
+  // 2. Mengubah loadData: Menggunakan getPlacesAsync() secara ringkas & async/await
   const loadData = async () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      await delaySimulation(800);
-      const result = await fetchTempatNongkrongFromApi();
+      const result = await getPlacesAsync();
       setDataNongkrong(result);
     } catch (err: any) {
       setErrorMessage(err.message || "Terjadi kesalahan saat memuat data.");
