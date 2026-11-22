@@ -1,5 +1,8 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -8,10 +11,12 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { supabase } from "@/lib/supabase";
 
 export default function DetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const [saving, setSaving] = useState(false);
 
   const { id, nama, kategori, rating, harga, jamBuka, lokasi, gambar } =
     useLocalSearchParams<{
@@ -30,6 +35,39 @@ export default function DetailScreen() {
       router.back();
     } else {
       router.replace("/");
+    }
+  };
+
+  const handleSaveFavorite = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        Alert.alert("Info", "Silakan login terlebih dahulu untuk menyimpan tempat.");
+        return;
+      }
+
+      const { error } = await supabase.from("spots").insert([
+        {
+          name: nama,
+          category: kategori,
+          location: lokasi,
+          rating: Math.round(Number(rating)) || 5,
+          user_id: user.id,
+        },
+      ]);
+
+      if (error) throw error;
+
+      Alert.alert("Tersimpan!", `${nama} berhasil ditambahkan ke Catatan Nongkrongku.`);
+    } catch (error: any) {
+      Alert.alert("Gagal Menyimpan", error.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -71,6 +109,21 @@ export default function DetailScreen() {
         </View>
 
         <Text style={styles.idText}>ID Tempat: {id}</Text>
+
+        <TouchableOpacity
+          style={styles.saveCloudButton}
+          onPress={handleSaveFavorite}
+          activeOpacity={0.8}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.customBackButtonText}>
+              ★ Simpan ke Catatanku (Cloud)
+            </Text>
+          )}
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.customBackButton}
@@ -137,12 +190,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 8,
   },
+  saveCloudButton: {
+    backgroundColor: "#0D9488",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 24,
+  },
   customBackButton: {
     backgroundColor: "#246A59",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 24,
+    marginTop: 12,
   },
   customBackButtonText: {
     color: "#FFFFFF",

@@ -108,14 +108,23 @@ export default function HomeScreen() {
         <View style={styles.headerRow}>
           <Text style={styles.headerTitle}>Nongkrongyuk</Text>
 
-          <TouchableOpacity
-            style={styles.searchToggle}
-            onPress={() => setSearchVisible(!searchVisible)}
-          >
-            <Text style={styles.searchToggleText}>
-              {searchVisible ? "✕" : "⌕"}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.mySpotsButton}
+              onPress={() => router.push("/my-spots")}
+            >
+              <Text style={styles.mySpotsButtonText}>★ Catatanku</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.searchToggle}
+              onPress={() => setSearchVisible(!searchVisible)}
+            >
+              <Text style={styles.searchToggleText}>
+                {searchVisible ? "✕" : "⌕"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -227,8 +236,18 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F4F7F6" },
   header: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 18 },
   headerSubtitle: { fontSize: 15, color: "#586361", marginTop: 5 },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
   headerTitle: { fontSize: 29, lineHeight: 35, fontWeight: "800", color: "#1D302C" },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
+  mySpotsButton: {
+    height: 40,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: "#0D9488",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mySpotsButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
   searchToggle: {
     width: 40,
     height: 40,
