@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -10,36 +9,13 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 
+import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 
 export default function ProfileScreen() {
-  const [user, setUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  // Mengambil data pengguna yang sedang login
-  useEffect(() => {
-    const getProfile = async () => {
-      try {
-        const { data, error } = await supabase.auth.getUser();
-
-        if (error || !data.user) {
-          router.replace("/(auth)/login");
-          return;
-        }
-
-        setUser(data.user);
-      } catch {
-        Alert.alert("Error", "Gagal mengambil data profil.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getProfile();
-  }, []);
 
   // Fungsi Logout
   const handleLogout = async () => {
@@ -66,8 +42,7 @@ export default function ProfileScreen() {
                 Alert.alert("Logout Gagal", error.message);
                 return;
               }
-
-              router.replace("/(auth)/login");
+              // Redirect otomatis ke /(auth)/login ditangani oleh Route Guard di _layout.tsx
             } catch {
               Alert.alert("Error", "Gagal melakukan logout.");
             } finally {
