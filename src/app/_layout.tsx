@@ -1,8 +1,13 @@
+
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useColorScheme } from "react-native";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
+
+export const unstable_settings = {
+  anchor: "(auth)/login",
+};
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,6 +30,16 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen
+          name="(auth)/login"
+          options={{ headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="(auth)/register"
+          options={{ headerShown: false }}
+        />
+
+        <Stack.Screen
           name="index"
           options={{
             headerShown: false,
@@ -40,12 +55,11 @@ export default function RootLayout() {
 
         <Stack.Screen
           name="detail"
-          options={({ route }: any) => ({
-            title: route.params?.nama ? route.params.nama : "Detail Cafe",
+          options={{
             headerShown: true,
-            headerBackTitle: "Kembali",
+            title: "Detail Cafe",
             animation: "slide_from_right",
-          })}
+          }}
         />
       </Stack>
     </ThemeProvider>

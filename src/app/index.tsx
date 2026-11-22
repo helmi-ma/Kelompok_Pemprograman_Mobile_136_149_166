@@ -26,10 +26,12 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [kategoriTerpilih, setKategoriTerpilih] = useState("Semua");
   const [searchVisible, setSearchVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const loadData = async () => {
     setIsLoading(true);
     setErrorMessage(null);
+
     try {
       const result = await getPlacesAsync();
       setDataNongkrong(result);
@@ -48,8 +50,10 @@ export default function HomeScreen() {
     const matchSearch =
       item.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.lokasi.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchKategori =
       kategoriTerpilih === "Semua" || item.kategori === kategoriTerpilih;
+
     return matchSearch && matchKategori;
   });
 
@@ -60,6 +64,7 @@ export default function HomeScreen() {
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{item.nama}</Text>
+
           <View style={styles.ratingContainer}>
             <Text style={styles.ratingText}>★ {item.rating}</Text>
           </View>
@@ -71,6 +76,7 @@ export default function HomeScreen() {
 
         <Text style={styles.infoText}>Lokasi: {item.lokasi}</Text>
         <Text style={styles.infoText}>Jam buka: {item.jamBuka}</Text>
+
         <Text style={styles.priceLabel}>Kisaran harga</Text>
         <Text style={styles.priceText}>{item.harga}</Text>
 
@@ -101,36 +107,77 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerSubtitle}>
-          Temukan tempat Nongkrong asik di Kota Malang ☕
-        </Text>
-
         <View style={styles.headerRow}>
           <Text style={styles.headerTitle}>Nongkrongyuk</Text>
 
           <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.mySpotsButton}
-              onPress={() => router.push("/my-spots")}
-            >
-              <Text style={styles.mySpotsButtonText}>★ Catatanku</Text>
-            </TouchableOpacity>
-
+            {/* Tombol Pencarian */}
             <TouchableOpacity
               style={styles.searchToggle}
-              onPress={() => setSearchVisible(!searchVisible)}
+              onPress={() => {
+                setSearchVisible(!searchVisible);
+                setMenuVisible(false);
+              }}
+              activeOpacity={0.8}
             >
               <Text style={styles.searchToggleText}>
                 {searchVisible ? "✕" : "⌕"}
               </Text>
             </TouchableOpacity>
+
+            {/* Tombol Hamburger */}
+            <TouchableOpacity
+              style={styles.menuToggle}
+              onPress={() => {
+                setMenuVisible(!menuVisible);
+                setSearchVisible(false);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.menuToggleText}>
+                {menuVisible ? "✕" : "☰"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
+
+        {/* Dropdown Menu */}
+        {menuVisible && (
+          <View style={styles.dropdownMenu}>
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              activeOpacity={0.7}
+              onPress={() => {
+                setMenuVisible(false);
+                router.push("/profile");
+              }}
+            >
+              <Text style={styles.dropdownIcon}>👤</Text>
+              <Text style={styles.dropdownText}>Profil Saya</Text>
+            </TouchableOpacity>
+
+            <View style={styles.dropdownDivider} />
+
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              activeOpacity={0.7}
+              onPress={() => {
+                setMenuVisible(false);
+                router.push("/my-spots");
+              }}
+            >
+              <Text style={styles.dropdownIcon}>★</Text>
+              <Text style={styles.dropdownText}>Catatanku</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
+      {/* Bagian Pencarian */}
       {searchVisible && (
         <View style={styles.searchContainer}>
           <Text style={styles.sectionTitle}>Cari tempat</Text>
+
           <TextInput
             style={styles.searchInput}
             accessibilityLabel="Cari nama tempat atau lokasi"
@@ -143,11 +190,13 @@ export default function HomeScreen() {
         </View>
       )}
 
+      {/* Bagian Kategori */}
       <View style={styles.categorySection}>
         <View style={styles.sectionHeading}>
           <Text style={styles.sectionTitle}>Pilih jenis tempat</Text>
           <Text style={styles.sectionHint}>Ketuk kategori untuk menyaring</Text>
         </View>
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -155,6 +204,7 @@ export default function HomeScreen() {
         >
           {KATEGORI_LIST.map((kategori) => {
             const isActive = kategoriTerpilih === kategori;
+
             return (
               <TouchableOpacity
                 key={kategori}
@@ -178,25 +228,30 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
+      {/* Loading */}
       {isLoading ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#246A59" />
           <Text style={styles.loadingText}>Mengambil data dari API...</Text>
         </View>
       ) : errorMessage ? (
+        /* Error */
         <View style={styles.centerContainer}>
           <Text style={styles.emptyTitle}>Gagal Memuat Data</Text>
           <Text style={styles.emptyText}>{errorMessage}</Text>
+
           <TouchableOpacity style={styles.resetButton} onPress={loadData}>
             <Text style={styles.resetButtonText}>Coba Lagi</Text>
           </TouchableOpacity>
         </View>
       ) : (
+        /* Daftar Tempat Nongkrong */
         <FlatList
           data={filteredData}
           onScroll={(event) => {
             if (event.nativeEvent.contentOffset.y > 10) {
               setSearchVisible(false);
+              setMenuVisible(false);
             }
           }}
           scrollEventThrottle={16}
@@ -212,9 +267,11 @@ export default function HomeScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyTitle}>Belum ada tempat yang cocok</Text>
+
               <Text style={styles.emptyText}>
                 Coba kata pencarian lain atau pilih kategori Semua.
               </Text>
+
               <TouchableOpacity
                 style={styles.resetButton}
                 onPress={() => {
@@ -222,7 +279,9 @@ export default function HomeScreen() {
                   setKategoriTerpilih("Semua");
                 }}
               >
-                <Text style={styles.resetButtonText}>Tampilkan semua tempat</Text>
+                <Text style={styles.resetButtonText}>
+                  Tampilkan semua tempat
+                </Text>
               </TouchableOpacity>
             </View>
           }
@@ -233,21 +292,39 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F4F7F6" },
-  header: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 18 },
-  headerSubtitle: { fontSize: 15, color: "#586361", marginTop: 5 },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
-  headerTitle: { fontSize: 29, lineHeight: 35, fontWeight: "800", color: "#1D302C" },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
-  mySpotsButton: {
-    height: 40,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "#0D9488",
-    alignItems: "center",
-    justifyContent: "center",
+  container: {
+    flex: 1,
+    backgroundColor: "#F4F7F6",
   },
-  mySpotsButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
+
+  header: {
+    paddingHorizontal: 22,
+    paddingTop: 16,
+    paddingBottom: 18,
+    position: "relative",
+    zIndex: 10,
+  },
+
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+
+  headerTitle: {
+    fontSize: 29,
+    lineHeight: 35,
+    fontWeight: "800",
+    color: "#1D302C",
+  },
+
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
   searchToggle: {
     width: 40,
     height: 40,
@@ -256,12 +333,98 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  searchToggleText: { color: "#FFFFFF", fontSize: 25, fontWeight: "bold" },
-  searchContainer: { paddingHorizontal: 22, marginBottom: 18 },
-  sectionHeading: { paddingHorizontal: 22, marginBottom: 10 },
-  sectionTitle: { fontSize: 16, lineHeight: 22, fontWeight: "700", color: "#1D302C" },
-  sectionHint: { fontSize: 13, color: "#687370", marginTop: 2 },
-  categorySection: { marginBottom: 10 },
+
+  searchToggleText: {
+    color: "#FFFFFF",
+    fontSize: 25,
+    fontWeight: "bold",
+  },
+
+  menuToggle: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "#246A59",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  menuToggleText: {
+    color: "#FFFFFF",
+    fontSize: 23,
+    fontWeight: "bold",
+  },
+
+  dropdownMenu: {
+    position: "absolute",
+    top: 65,
+    right: 22,
+    width: 185,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingVertical: 6,
+    elevation: 8,
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    zIndex: 100,
+  },
+
+  dropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 13,
+    paddingHorizontal: 15,
+  },
+
+  dropdownIcon: {
+    fontSize: 17,
+    width: 30,
+  },
+
+  dropdownText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1D302C",
+  },
+
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: "#EDF1EF",
+    marginHorizontal: 12,
+  },
+
+  searchContainer: {
+    paddingHorizontal: 22,
+    marginBottom: 18,
+  },
+
+  sectionHeading: {
+    paddingHorizontal: 22,
+    marginBottom: 10,
+  },
+
+  sectionTitle: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: "700",
+    color: "#1D302C",
+  },
+
+  sectionHint: {
+    fontSize: 13,
+    color: "#687370",
+    marginTop: 2,
+  },
+
+  categorySection: {
+    marginBottom: 10,
+  },
+
   searchInput: {
     backgroundColor: "#FFFFFF",
     borderRadius: 10,
@@ -273,7 +436,13 @@ const styles = StyleSheet.create({
     borderColor: "#DCE5E1",
     color: "#1D302C",
   },
-  categoryContainer: { paddingHorizontal: 22, alignItems: "center", paddingBottom: 3 },
+
+  categoryContainer: {
+    paddingHorizontal: 22,
+    alignItems: "center",
+    paddingBottom: 3,
+  },
+
   categoryChip: {
     minHeight: 42,
     justifyContent: "center",
@@ -282,11 +451,34 @@ const styles = StyleSheet.create({
     backgroundColor: "#E6ECE9",
     marginRight: 9,
   },
-  categoryChipActive: { backgroundColor: "#246A59" },
-  categoryText: { fontSize: 14, color: "#35413E", fontWeight: "600" },
-  categoryTextActive: { color: "#FFFFFF", fontWeight: "700" },
-  listContainer: { paddingHorizontal: 22, paddingBottom: 28 },
-  resultCount: { fontSize: 13, fontWeight: "600", color: "#687370", marginBottom: 10 },
+
+  categoryChipActive: {
+    backgroundColor: "#246A59",
+  },
+
+  categoryText: {
+    fontSize: 14,
+    color: "#35413E",
+    fontWeight: "600",
+  },
+
+  categoryTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+
+  listContainer: {
+    paddingHorizontal: 22,
+    paddingBottom: 28,
+  },
+
+  resultCount: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#687370",
+    marginBottom: 10,
+  },
+
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 10,
@@ -295,12 +487,44 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E0E7E3",
   },
-  cardImage: { width: "100%", height: 148 },
-  cardContent: { padding: 15 },
-  cardHeader: { flexDirection: "row", alignItems: "flex-start", marginBottom: 8 },
-  cardTitle: { fontSize: 17, lineHeight: 23, fontWeight: "700", color: "#1D302C", flex: 1, marginRight: 10 },
-  ratingContainer: { backgroundColor: "#FFF0D7", paddingHorizontal: 9, paddingVertical: 5, borderRadius: 6 },
-  ratingText: { fontSize: 11, fontWeight: "700", color: "#8B4B16" },
+
+  cardImage: {
+    width: "100%",
+    height: 148,
+  },
+
+  cardContent: {
+    padding: 15,
+  },
+
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
+
+  cardTitle: {
+    fontSize: 17,
+    lineHeight: 23,
+    fontWeight: "700",
+    color: "#1D302C",
+    flex: 1,
+    marginRight: 10,
+  },
+
+  ratingContainer: {
+    backgroundColor: "#FFF0D7",
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+
+  ratingText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#8B4B16",
+  },
+
   badgeContainer: {
     alignSelf: "flex-start",
     backgroundColor: "#E6F2EE",
@@ -309,10 +533,33 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 9,
   },
-  badgeText: { fontSize: 12, color: "#246A59", fontWeight: "600" },
-  infoText: { fontSize: 13, lineHeight: 19, color: "#586361", marginBottom: 3 },
-  priceLabel: { fontSize: 12, color: "#687370", marginTop: 8 },
-  priceText: { fontSize: 15, fontWeight: "700", color: "#246A59", marginTop: 2 },
+
+  badgeText: {
+    fontSize: 12,
+    color: "#246A59",
+    fontWeight: "600",
+  },
+
+  infoText: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: "#586361",
+    marginBottom: 3,
+  },
+
+  priceLabel: {
+    fontSize: 12,
+    color: "#687370",
+    marginTop: 8,
+  },
+
+  priceText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#246A59",
+    marginTop: 2,
+  },
+
   detailButton: {
     backgroundColor: "#246A59",
     paddingVertical: 10,
@@ -320,12 +567,44 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 12,
   },
-  detailButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-  centerContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 22 },
-  loadingText: { marginTop: 12, fontSize: 14, color: "#586361" },
-  emptyContainer: { alignItems: "flex-start", paddingVertical: 28 },
-  emptyTitle: { fontSize: 17, fontWeight: "700", color: "#1D302C", marginBottom: 6 },
-  emptyText: { fontSize: 14, lineHeight: 20, color: "#687370" },
+
+  detailButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 22,
+  },
+
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: "#586361",
+  },
+
+  emptyContainer: {
+    alignItems: "flex-start",
+    paddingVertical: 28,
+  },
+
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#1D302C",
+    marginBottom: 6,
+  },
+
+  emptyText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#687370",
+  },
+
   resetButton: {
     minHeight: 44,
     justifyContent: "center",
@@ -334,5 +613,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#246A59",
     borderRadius: 8,
   },
-  resetButtonText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
+
+  resetButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
 });
