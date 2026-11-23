@@ -13,10 +13,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { getPlacesAsync } from "@/services/nongkrongService";
+import { getPlacesFromSupabase } from "@/services/nongkrongService";
 import { TempatNongkrong } from "@/types/nongkrong";
 
 const KATEGORI_LIST = ["Semua", "Kafe", "Workspace", "Outdoor", "Rooftop"];
+const ITEMS_PER_PAGE = 10;
 
 export default function HomeScreen() {
   const [dataNongkrong, setDataNongkrong] = useState<TempatNongkrong[]>([]);
@@ -28,34 +29,169 @@ export default function HomeScreen() {
   const [searchVisible, setSearchVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
 
-  const loadData = async () => {
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalItems, setTotalItems] = useState<number>(0);
+
+  const loadData = async (page: number = currentPage) => {
     setIsLoading(true);
     setErrorMessage(null);
 
     try {
-      const result = await getPlacesAsync();
-      setDataNongkrong(result);
+      const result = await getPlacesFromSupabase(
+        page,
+        ITEMS_PER_PAGE,
+        searchQuery,
+        kategoriTerpilih
+      );
+      setDataNongkrong(result.data);
+      setTotalPages(result.totalPages);
+      setTotalItems(result.total);
+      setCurrentPage(result.page);
     } catch (err: any) {
-      setErrorMessage(err.message || "Terjadi kesalahan saat memuat data.");
+      setErrorMessage(
+        err.message || "Terjadi kesalahan saat memuat data dari Supabase."
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    // Reset ke halaman 1 saat filter pencarian atau kategori berubah
+    setCurrentPage(1);
+    loadData(1);
+  }, [searchQuery, kategoriTerpilih]);
 
-  const filteredData = dataNongkrong.filter((item) => {
-    const matchSearch =
-      item.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.lokasi.toLowerCase().includes(searchQuery.toLowerCase());
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      setCurrentPage(newPage);
+      loadData(newPage);
+    }
+  };
 
-    const matchKategori =
-      kategoriTerpilih === "Semua" || item.kategori === kategoriTerpilih;
+  // Generate array nomor halaman yang ditampilkan
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
 
-    return matchSearch && matchKategori;
-  });
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      let start = Math.max(1, currentPage - 2);
+      let end = Math.min(totalPages, currentPage + 2);
+
+      if (currentPage <= 3) {
+        start = 1;
+        end = maxVisible;
+      } else if (currentPage >= totalPages - 2) {
+        start = totalPages - (maxVisible - 1);
+        end = totalPages;
+      }
+
+      if (start > 1) {
+        pages.push(1);
+        if (start > 2) pages.push("...");
+      }
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      if (end < totalPages) {
+        if (end < totalPages - 1) pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1 && dataNongkrong.length === 0) return null;
+
+    const pageNumbers = getPageNumbers();
+
+    return (
+      <View style={styles.paginationContainer}>
+        {/* Tombol Sebelumnya */}
+        <TouchableOpacity
+          style={[
+            styles.pageNavButton,
+            currentPage === 1 && styles.pageNavButtonDisabled,
+          ]}
+          onPress={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1 || isLoading}
+          activeOpacity={0.7}
+        >
+          <Text
+            style={[
+              styles.pageNavButtonText,
+              currentPage === 1 && styles.pageNavButtonTextDisabled,
+            ]}
+          >
+            ‹ Prev
+          </Text>
+        </TouchableOpacity>
+
+        {/* Nomor Halaman */}
+        <View style={styles.pageNumbersContainer}>
+          {pageNumbers.map((p, index) => {
+            if (typeof p === "string") {
+              return (
+                <View key={`ellipsis-${index}`} style={styles.pageEllipsis}>
+                  <Text style={styles.pageEllipsisText}>{p}</Text>
+                </View>
+              );
+            }
+
+            const isActive = p === currentPage;
+            return (
+              <TouchableOpacity
+                key={`page-${p}`}
+                style={[styles.pageNumberBtn, isActive && styles.pageNumberBtnActive]}
+                onPress={() => handlePageChange(p)}
+                disabled={isLoading}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.pageNumberText,
+                    isActive && styles.pageNumberTextActive,
+                  ]}
+                >
+                  {p}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Tombol Selanjutnya */}
+        <TouchableOpacity
+          style={[
+            styles.pageNavButton,
+            currentPage === totalPages && styles.pageNavButtonDisabled,
+          ]}
+          onPress={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages || isLoading}
+          activeOpacity={0.7}
+        >
+          <Text
+            style={[
+              styles.pageNavButtonText,
+              currentPage === totalPages && styles.pageNavButtonTextDisabled,
+            ]}
+          >
+            Next ›
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const renderCard = ({ item }: { item: TempatNongkrong }) => (
     <TouchableOpacity style={styles.card} activeOpacity={0.8}>
@@ -232,7 +368,7 @@ export default function HomeScreen() {
       {isLoading ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#246A59" />
-          <Text style={styles.loadingText}>Mengambil data dari API...</Text>
+          <Text style={styles.loadingText}>Mengambil data dari Supabase...</Text>
         </View>
       ) : errorMessage ? (
         /* Error */
@@ -240,14 +376,14 @@ export default function HomeScreen() {
           <Text style={styles.emptyTitle}>Gagal Memuat Data</Text>
           <Text style={styles.emptyText}>{errorMessage}</Text>
 
-          <TouchableOpacity style={styles.resetButton} onPress={loadData}>
+          <TouchableOpacity style={styles.resetButton} onPress={() => loadData(currentPage)}>
             <Text style={styles.resetButtonText}>Coba Lagi</Text>
           </TouchableOpacity>
         </View>
       ) : (
         /* Daftar Tempat Nongkrong */
         <FlatList
-          data={filteredData}
+          data={dataNongkrong}
           onScroll={(event) => {
             if (event.nativeEvent.contentOffset.y > 10) {
               setSearchVisible(false);
@@ -260,10 +396,18 @@ export default function HomeScreen() {
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
-            <Text style={styles.resultCount}>
-              {filteredData.length} tempat ditemukan
-            </Text>
+            <View style={styles.resultHeaderRow}>
+              <Text style={styles.resultCount}>
+                {totalItems} tempat ditemukan
+              </Text>
+              {totalPages > 1 && (
+                <Text style={styles.pageInfoText}>
+                  Halaman {currentPage} dari {totalPages}
+                </Text>
+              )}
+            </View>
           }
+          ListFooterComponent={renderPagination}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyTitle}>Belum ada tempat yang cocok</Text>
@@ -476,7 +620,96 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: "#687370",
+  },
+
+  resultHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 10,
+  },
+
+  pageInfoText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#246A59",
+  },
+
+  paginationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    gap: 8,
+  },
+
+  pageNumbersContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  pageNumberBtn: {
+    minWidth: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#DCE5E1",
+    paddingHorizontal: 8,
+  },
+
+  pageNumberBtnActive: {
+    backgroundColor: "#246A59",
+    borderColor: "#246A59",
+  },
+
+  pageNumberText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#1D302C",
+  },
+
+  pageNumberTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+
+  pageEllipsis: {
+    paddingHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  pageEllipsisText: {
+    fontSize: 13,
+    color: "#687370",
+  },
+
+  pageNavButton: {
+    paddingHorizontal: 12,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: "#E6F2EE",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  pageNavButtonDisabled: {
+    backgroundColor: "#EDF1EF",
+    opacity: 0.5,
+  },
+
+  pageNavButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#246A59",
+  },
+
+  pageNavButtonTextDisabled: {
+    color: "#9EABA6",
   },
 
   card: {
