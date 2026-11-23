@@ -167,7 +167,7 @@ export default function HomeScreen() {
               }}
             >
               <Text style={styles.dropdownIcon}>★</Text>
-              <Text style={styles.dropdownText}>Catatanku</Text>
+              <Text style={styles.dropdownText}>Favorit</Text>
             </TouchableOpacity>
           </View>
         )}

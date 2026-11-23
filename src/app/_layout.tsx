@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-import { ActivityIndicator, useColorScheme, View } from "react-native";
 import {
   DarkTheme,
   DefaultTheme,
@@ -9,6 +7,8 @@ import {
   useSegments,
 } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
+import { ActivityIndicator, useColorScheme, View } from "react-native";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -72,15 +72,9 @@ function RootLayoutNav() {
           },
         }}
       >
-        <Stack.Screen
-          name="(auth)/login"
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
 
-        <Stack.Screen
-          name="(auth)/register"
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="(auth)/register" options={{ headerShown: false }} />
 
         <Stack.Screen
           name="index"
@@ -102,6 +96,13 @@ function RootLayoutNav() {
             headerShown: true,
             title: "Detail Cafe",
             animation: "slide_from_right",
+          }}
+        />
+
+        <Stack.Screen
+          name="my-spots"
+          options={{
+            headerShown: false,
           }}
         />
       </Stack>
