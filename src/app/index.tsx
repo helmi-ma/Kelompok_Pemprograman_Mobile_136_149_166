@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   ScrollView,
@@ -13,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { supabase } from "@/lib/supabase";
 import { getPlacesFromSupabase } from "@/services/nongkrongService";
 import { TempatNongkrong } from "@/types/nongkrong";
 
@@ -23,16 +25,29 @@ export default function HomeScreen() {
   const [dataNongkrong, setDataNongkrong] = useState<TempatNongkrong[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [kategoriTerpilih, setKategoriTerpilih] = useState("Semua");
   const [searchVisible, setSearchVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
-
-  // Pagination states
+  const [favoriteNames, setFavoriteNames] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalItems, setTotalItems] = useState<number>(0);
+  const loadFavorites = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from("spots")
+      .select("name")
+      .eq("user_id", user.id);
+
+    if (data) {
+      setFavoriteNames(data.map((item) => item.name));
+    }
+  };
 
   const loadData = async (page: number = currentPage) => {
     setIsLoading(true);
@@ -59,10 +74,56 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    // Reset ke halaman 1 saat filter pencarian atau kategori berubah
+    loadFavorites();
+  }, []);
+
+  useEffect(() => {
     setCurrentPage(1);
     loadData(1);
   }, [searchQuery, kategoriTerpilih]);
+
+  const handleToggleFavorite = async (item: TempatNongkrong) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      Alert.alert("Info", "Silakan login terlebih dahulu untuk menyimpan favorit.");
+      return;
+    }
+
+    const isAlreadyFav = favoriteNames.includes(item.nama);
+
+    if (isAlreadyFav) {
+      setFavoriteNames((prev) => prev.filter((name) => name !== item.nama));
+      const { error } = await supabase
+        .from("spots")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("name", item.nama);
+
+      if (error) {
+        setFavoriteNames((prev) => [...prev, item.nama]);
+        Alert.alert("Gagal Menghapus Favorit", error.message);
+      }
+    } else {
+      setFavoriteNames((prev) => [...prev, item.nama]);
+      const { error } = await supabase.from("spots").insert([
+        {
+          name: item.nama,
+          category: item.kategori,
+          location: item.lokasi,
+          rating: Math.round(Number(item.rating)) || 5,
+          user_id: user.id,
+        },
+      ]);
+
+      if (error) {
+        setFavoriteNames((prev) => prev.filter((name) => name !== item.nama));
+        Alert.alert("Gagal Menyimpan Favorit", error.message);
+      }
+    }
+  };
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
@@ -193,52 +254,69 @@ export default function HomeScreen() {
     );
   };
 
-  const renderCard = ({ item }: { item: TempatNongkrong }) => (
-    <TouchableOpacity style={styles.card} activeOpacity={0.8}>
-      <Image source={{ uri: item.gambar }} style={styles.cardImage} />
+  const renderCard = ({ item }: { item: TempatNongkrong }) => {
+    const isFav = favoriteNames.includes(item.nama);
 
-      <View style={styles.cardContent}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>{item.nama}</Text>
+    return (
+      <TouchableOpacity style={styles.card} activeOpacity={0.8}>
+        <Image source={{ uri: item.gambar }} style={styles.cardImage} />
 
-          <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>★ {item.rating}</Text>
+        <View style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>{item.nama}</Text>
+
+            <View style={styles.ratingContainer}>
+              <Text style={styles.ratingText}>★ {item.rating}</Text>
+            </View>
+          </View>
+
+          <View style={styles.badgeContainer}>
+            <Text style={styles.badgeText}>{item.kategori}</Text>
+          </View>
+
+          <Text style={styles.infoText}>Lokasi: {item.lokasi}</Text>
+          <Text style={styles.infoText}>Jam buka: {item.jamBuka}</Text>
+
+          <Text style={styles.priceLabel}>Kisaran harga</Text>
+          <Text style={styles.priceText}>{item.harga}</Text>
+
+          {/* Baris Tombol Lihat Detail + Favorit */}
+          <View style={styles.cardActionRow}>
+            <TouchableOpacity
+              style={styles.detailButton}
+              onPress={() =>
+                router.push({
+                  pathname: "/detail",
+                  params: {
+                    id: item.id,
+                    nama: item.nama,
+                    kategori: item.kategori,
+                    rating: String(item.rating),
+                    harga: item.harga,
+                    jamBuka: item.jamBuka,
+                    lokasi: item.lokasi,
+                    gambar: item.gambar,
+                  },
+                })
+              }
+            >
+              <Text style={styles.detailButtonText}>Lihat Detail</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.favButton, isFav && styles.favButtonActive]}
+              onPress={() => handleToggleFavorite(item)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.favButtonText, isFav && styles.favButtonTextActive]}>
+                {isFav ? "♥" : "♡"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        <View style={styles.badgeContainer}>
-          <Text style={styles.badgeText}>{item.kategori}</Text>
-        </View>
-
-        <Text style={styles.infoText}>Lokasi: {item.lokasi}</Text>
-        <Text style={styles.infoText}>Jam buka: {item.jamBuka}</Text>
-
-        <Text style={styles.priceLabel}>Kisaran harga</Text>
-        <Text style={styles.priceText}>{item.harga}</Text>
-
-        <TouchableOpacity
-          style={styles.detailButton}
-          onPress={() =>
-            router.push({
-              pathname: "/detail",
-              params: {
-                id: item.id,
-                nama: item.nama,
-                kategori: item.kategori,
-                rating: String(item.rating),
-                harga: item.harga,
-                jamBuka: item.jamBuka,
-                lokasi: item.lokasi,
-                gambar: item.gambar,
-              },
-            })
-          }
-        >
-          <Text style={styles.detailButtonText}>Lihat Detail</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -793,18 +871,51 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
+  cardActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 12,
+  },
+
   detailButton: {
+    flex: 1,
     backgroundColor: "#246A59",
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 12,
   },
 
   detailButtonText: {
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "700",
+  },
+
+  favButton: {
+    width: 44,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "#E6F2EE",
+    borderWidth: 1,
+    borderColor: "#246A59",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  favButtonActive: {
+    backgroundColor: "#FEE2E2",
+    borderColor: "#DC2626",
+  },
+
+  favButtonText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#246A59",
+  },
+
+  favButtonTextActive: {
+    color: "#DC2626",
   },
 
   centerContainer: {
